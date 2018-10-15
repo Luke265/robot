@@ -1,36 +1,55 @@
 import { Rect, Mat, THRESH_BINARY, FILLED, LINE_8, Vec3 } from "opencv4nodejs";
 import { Utils } from "./utils";
+import { Result } from "./result";
+import { CVResult } from "./cv-result";
+import { MatchOptions } from "./match-options";
+import { MultiMatchOptions } from "./multi-match-options";
 
 export class Finder {
 
     lastResult: Result;
     lastResultRegion: Rect;
-    source: Mat | (() => Mat);
+    source: Mat;
     region: Rect;
-    targetImage: Image;
+    target: Mat;
     matchMethod: number;
     matchLevel: number;
     alt: MatchOptions[];
     remember = true;
     freeze = false;
-    treshhold = {
-        type: THRESH_BINARY,
-        min: 0.5,
-        max: 1
-    };
-    flood = {
-        min: 0.1,
-        max: 1
+    mask: Mat;
+    treshhold;
+    flood;
+
+    constructor(options: MultiMatchOptions = {}) {
+        this.flood = options.flood || {
+            min: 0.1,
+            max: 1
+        };
+        this.treshhold = options.treshhold || {
+            type: THRESH_BINARY,
+            min: 0.5,
+            max: 1
+        };
+        this.mask = options.mask;
+        this.freeze = options.freeze;
+        this.remember = options.remember;
+        this.region = options.region;
+        this.alt = options.alt;
+        this.matchLevel = options.matchLevel;
+        this.matchMethod = options.matchMethod;
+        this.target = options.target;
+        this.source = options.source;
     }
 
     public *findMany() {
-        const originalSource = this.source instanceof Mat ? this.source : this.source();
+        const originalSource = this.source;
         let source: Mat = originalSource;
         if (this.region) {
             source = source.getRegion(this.region);
         }
         let match = source
-            .matchTemplate(this.targetImage.mat, this.matchMethod)
+            .matchTemplate(this.target, this.matchMethod, this.mask)
             .threshold(this.treshhold.min, this.treshhold.max, this.treshhold.type);
         let loc;
         let maxMatches = 10;
@@ -57,13 +76,13 @@ export class Finder {
     }
 
     public find() {
-        let originalSource = this.source instanceof Mat ? this.source : this.source();
+        let originalSource = this.source;
         if (this.region) {
             originalSource = originalSource.getRegion(this.region);
             this.lastResult = null; // temporary
         }
         let source: Mat = originalSource;
-        let match;
+        let match: Mat;
         let result;
         let region: Rect = this.region;
         let scalingAttempts = 1;
@@ -83,13 +102,13 @@ export class Finder {
                  console.log('Min Rectangle: ', rectangle.x, rectangle.y, rectangle.width, rectangle.height);
              }*/
             if (this.region) {
-                 region = new Rect(
-                     region.x - this.region.x,
-                     region.y - this.region.y,
-                     region.width,
-                     region.height
-                 )
-             }
+                region = new Rect(
+                    region.x - this.region.x,
+                    region.y - this.region.y,
+                    region.width,
+                    region.height
+                )
+            }
             //console.log('Getting region', region.x, region.y, region.width, region.height);
             source = source.getRegion(region);
         }
@@ -102,7 +121,11 @@ export class Finder {
                     cv.LINE_8
                 );
             }*/
-            match = source.matchTemplate(this.targetImage.mat, this.matchMethod);
+            if (this.mask) {
+                match = source.matchTemplate(this.target, this.matchMethod, this.mask);
+            } else {
+                match = source.matchTemplate(this.target, this.matchMethod);
+            }
             result = match.minMaxLoc();
             if (result.maxVal >= this.matchLevel) {
                 return this.toResult(result, region);
@@ -114,7 +137,7 @@ export class Finder {
             if (this.alt) {
                 for (let alt of this.alt) {
                     const matchLevel = alt.matchLevel || this.matchLevel;
-                    match = source.matchTemplate((<any>alt.targetImage).mat, alt.matchMethod || this.matchMethod);
+                    match = source.matchTemplate((<any>alt.target).mat, alt.matchMethod || this.matchMethod);
                     result = match.minMaxLoc();
                     if (result.maxVal >= matchLevel) {
                         console.log('Alternative result');
@@ -135,21 +158,15 @@ export class Finder {
     }
 
     toResult(match: CVResult, offset?: Rect): Result {
-        const region = new Rect(
+        const result = new Result(
             match.maxLoc.x + (offset ? offset.x : 0),
             match.maxLoc.y + (offset ? offset.y : 0),
-            this.targetImage.mat.cols,
-            this.targetImage.mat.rows
+            this.target.cols,
+            this.target.rows,
+            match.maxVal
         );
-        const result = {
-            x: region.x,
-            y: region.y,
-            width: region.width,
-            height: region.height,
-            value: match.maxVal
-        };
         if (this.remember) {
-            this.lastResultRegion = region;
+            this.lastResultRegion = result;
             this.lastResult = result;
         } else {
             this.reset();

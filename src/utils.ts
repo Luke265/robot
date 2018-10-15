@@ -10,11 +10,11 @@ export class Utils {
         return Math.random() * (max - min) + min;
     }
 
-    public static isOutOfBounds(mat: Mat, rect: BasicRect) {
+    public static isOutOfBounds(mat: Mat, rect: Rect) {
         return (rect.x + rect.width) >= mat.cols || (rect.y + rect.height) >= mat.rows;
     }
 
-    public static scaleRect(rect: BasicRect, scale: number = 2) {
+    public static scaleRect(rect: Rect, scale: number = 2) {
         let x = rect.x - (rect.width / scale);
         let y = rect.y - (rect.height / scale);
         if (x < 0) {

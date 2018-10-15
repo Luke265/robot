@@ -1,11 +1,25 @@
 import { imread, Rect } from 'opencv4nodejs';
 import * as cv from 'opencv4nodejs';
 import * as path from 'path';
+import { MultiMatchOptions } from './multi-match-options';
 
+export class Config {
+
+    properties = {};
+
+    static from(obj: any, baseDir: string) {
+        const config = new Config();
+        for (let p in obj.properties) {
+            config.properties[p] = parseProperty(obj.properties[p], baseDir);
+        }
+        return config;
+    }
+
+}
 export const PropertyParsers = {
     Composite(value, baseUrl) {
         const obj: MultiMatchOptions = Object.assign(value, {
-            targetImage: PropertyParsers.Image(value.targetImage, baseUrl)
+            target: PropertyParsers.Image(value.target, baseUrl)
         })
         if (value.region) {
             obj.region = PropertyParsers.Rect(value.region);
@@ -18,27 +32,9 @@ export const PropertyParsers = {
         }
         return obj;
     },
-    Image(value, baseUrl): Image {
+    Image(value, baseUrl) {
         value = path.join(baseUrl, value);
-        try {
-            let mat = imread(value);
-            //const channels = mat.splitChannels();
-            //const alphaChannel = new Mat(mat.rows, mat.cols, 0);
-            //channels.push(alphaChannel);
-            //console.log(alphaChannel, channels[0].type);
-            // mat = new Mat(channels);
-            //mat = mat.cvtColor(0, cv.COLOR_RGB2RGBA);
-            //mat.push_back(alphaChannel);
-            // console.log(mat, 'b');
-            //console.log('After: ' + mat.type + ' channels: ' + mat.splitChannels().length);
-            return {
-                path: value,
-                mat
-            };
-        } catch (e) {
-            console.error(value, e);
-            throw new Error('Image not found');
-        }
+        return imread(value);
     },
     PrimitiveValue(value) {
         return {
@@ -62,16 +58,7 @@ export const PropertyParsers = {
         );
     }
 }
-export function parse(obj: any, baseUrl: string) {
-    const config: Config = {
-        properties: {}
-    };
-    for (let p in obj.properties) {
-        config.properties[p] = parseProperty(obj.properties[p], baseUrl);
-    }
-    return config;
-}
-export function parseProperty(prop: any, baseUrl: string): PropertyValue {
+export function parseProperty(prop: any, baseUrl: string): any {
     const parser = PropertyParsers[prop.type];
     if (!parser) {
         throw new Error('Property type "' + prop.type + '" parser not found.');
