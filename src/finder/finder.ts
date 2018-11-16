@@ -1,15 +1,15 @@
 import { Rect, Mat, THRESH_BINARY, FILLED, LINE_8, Vec3 } from "opencv4nodejs";
-import { Utils } from "./utils";
 import { Result } from "./result";
 import { CVResult } from "./cv-result";
 import { MatchOptions } from "./match-options";
 import { MultiMatchOptions } from "./multi-match-options";
+import { Utils } from "../utils";
 
 export class Finder {
 
     lastResult: Result;
     lastResultRegion: Rect;
-    source: Mat;
+    source: Mat | (() => Mat);
     region: Rect;
     target: Mat;
     matchMethod: number;
@@ -32,8 +32,8 @@ export class Finder {
             max: 1
         };
         this.mask = options.mask;
-        this.freeze = options.freeze;
-        this.remember = options.remember;
+        this.freeze = options.freeze || false;
+        this.remember = options.remember || true;
         this.region = options.region;
         this.alt = options.alt;
         this.matchLevel = options.matchLevel;
@@ -43,7 +43,7 @@ export class Finder {
     }
 
     public *findMany() {
-        const originalSource = this.source;
+        const originalSource = typeof this.source === 'function' ? this.source() : this.source;
         let source: Mat = originalSource;
         if (this.region) {
             source = source.getRegion(this.region);
@@ -76,7 +76,7 @@ export class Finder {
     }
 
     public find() {
-        let originalSource = this.source;
+        let originalSource = typeof this.source === 'function' ? this.source() : this.source;
         if (this.region) {
             originalSource = originalSource.getRegion(this.region);
             this.lastResult = null; // temporary

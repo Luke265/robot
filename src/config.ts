@@ -1,47 +1,55 @@
 import { imread, Rect } from 'opencv4nodejs';
 import * as cv from 'opencv4nodejs';
 import * as path from 'path';
-import { MultiMatchOptions } from './multi-match-options';
+import * as fs from 'fs';
+import { MultiMatchOptions } from './finder/multi-match-options';
 
 export class Config {
 
-    properties = {};
+    properties: { [key: string]: any } = {};
 
-    static from(obj: any, baseDir: string) {
+    static from(pathStr: string) {
+        pathStr = path.resolve(pathStr);
+        const configStr = fs.readFileSync(pathStr).toString();
+        const obj = JSON.parse(configStr);
         const config = new Config();
-        for (let p in obj.properties) {
-            config.properties[p] = parseProperty(obj.properties[p], baseDir);
+        for (const prop in obj.properties) {
+            config.properties[prop] = parseProperty(obj.properties[prop], path.dirname(pathStr));
         }
         return config;
     }
 
 }
 export const PropertyParsers = {
-    Composite(value, baseUrl) {
+    finder(value, baseUrl) {
         const obj: MultiMatchOptions = Object.assign(value, {
-            target: PropertyParsers.Image(value.target, baseUrl)
+            target: PropertyParsers.image(value.target, baseUrl)
         })
         if (value.region) {
-            obj.region = PropertyParsers.Rect(value.region);
+            obj.region = PropertyParsers.rect(value.region);
         }
         if (value.matchMethod) {
             obj.matchMethod = cv[value.matchMethod];
         }
         if (value.alt) {
-            obj.alt = value.alt.map((alt) => PropertyParsers.Composite(alt, baseUrl));
+            obj.alt = value.alt.map((alt) => PropertyParsers.finder(alt, baseUrl));
         }
         return obj;
     },
-    Image(value, baseUrl) {
+    image(value, baseUrl) {
         value = path.join(baseUrl, value);
-        return imread(value);
+        try {
+            return imread(value);
+        } catch (e) {
+            throw new Error('Failed to read image: ' + value);
+        }
     },
-    PrimitiveValue(value) {
+    primitiveValue(value) {
         return {
             value
         };
     },
-    Rect(value) {
+    rect(value) {
         if (value instanceof Array) {
             return new Rect(
                 value[0],
@@ -60,8 +68,5 @@ export const PropertyParsers = {
 }
 export function parseProperty(prop: any, baseUrl: string): any {
     const parser = PropertyParsers[prop.type];
-    if (!parser) {
-        throw new Error('Property type "' + prop.type + '" parser not found.');
-    }
-    return parser(prop.value, baseUrl);
+    return parser ? parser(prop.value, baseUrl) : prop;
 }

@@ -1,4 +1,4 @@
-import { Utils } from "./utils";
+import { Utils } from "../utils";
 import * as robotjs from 'robotjs';
 
 export interface Options {
@@ -35,11 +35,20 @@ export class Mover {
     }
 
     step() {
+        if (this.stopped) {
+            return false;
+        }
         this.startLocation = robotjs.getMousePos();
         this.xs = this.startLocation.x;
         this.ys = this.startLocation.y;
         const dist = this.dist;
         if (dist < 1) {
+            const x = Math.round(this.x);
+            const y = Math.round(this.y);
+            if (x != Math.round(this.xs) || y != Math.round(this.ys)) {
+                robotjs.moveMouse(x, y);
+            }
+            this.stopped = true;
             return false;
         }
         this.options.wind = Math.min(this.options.wind, dist);
@@ -76,15 +85,6 @@ export class Mover {
         this.ys = Math.round(this.ys + this.veloY);
         robotjs.moveMouse(this.xs, this.ys);
         return true;
-    }
-
-    end() {
-        const x = Math.round(this.x);
-        const y = Math.round(this.y);
-        if (x != Math.round(this.xs) || y != Math.round(this.ys)) {
-            robotjs.moveMouse(x, y);
-        }
-        this.stopped = true;
     }
 
 }

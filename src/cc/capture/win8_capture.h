@@ -171,6 +171,7 @@ class robot::Win8Capture : public robot::Capture
 
 		lDxgiDevice.Release();
 
+		// display num
 		UINT Output = 0;
 
 		// Get output

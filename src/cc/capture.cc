@@ -20,7 +20,7 @@ NAN_MODULE_INIT(Capture::Init)
 NAN_METHOD(Capture::New)
 {
     Capture *self = new Capture();
-    if (false && IsWindows8OrGreater())
+    if (IsWindows8OrGreater())
     {
         self->capture = new robot::Win8Capture();
     }

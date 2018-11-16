@@ -2,7 +2,7 @@ import { Mat, Rect } from "opencv4nodejs";
 import { Result } from "./result";
 
 export interface MatchOptions {
-    source?: Mat;
+    source?: Mat | (() => Mat);
     target?: Mat;
     mask?: Mat;
     alt?: MatchOptions[];
