@@ -16,8 +16,7 @@
         "./node_modules/opencv4nodejs/cc/core",
         "./node_modules/opencv4nodejs/cc/modules",
         "<!(node -e \"require('nan')\")",
-				"<!(node -e \"require('macro-inferno')\")",
-				"<!(node -e \"require('native-node-utils')\")",
+		"<!(node -e \"require('native-node-utils')\")",
       ],
       "libraries": [
         "<!@(node lib/utils/find-opencv.js --libs)"
@@ -78,8 +77,8 @@
 					"files": [
 						"<(PRODUCT_DIR)/robot.node",
 						"node_modules/opencv4nodejs/build/Release/opencv4nodejs.node",
-						"node_modules/iohook/builds/node-v64-win32-x64/build/Release/iohook.node",
-						"node_modules/iohook/builds/node-v64-win32-x64/build/Release/uiohook.dll",
+						"node_modules/iohook/builds/node-v79-win32-x64/build/Release/iohook.node",
+						"node_modules/iohook/builds/node-v79-win32-x64/build/Release/uiohook.dll",
 						"node_modules/robotjs/build/Release/robotjs.node"
 					],
 					"destination": "./dist"

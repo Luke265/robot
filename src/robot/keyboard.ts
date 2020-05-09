@@ -6,27 +6,27 @@ export type Modifier = 'alt' | 'command' | 'control' | 'shift';
 
 export class Keyboard {
 
-    constructor(private context: Robot) {
+     constructor(private context: Robot) {
 
     }
 
     async type(str: string) {
-        const millis = () => {
+        const getDelay = () => {
             const random = Utils.random(100);
             if (random > 97) {
-                return Utils.random(232, 150)
+                return Utils.random(150, 232)
             } else if (random > 80) {
-                return Utils.random(140, 31);
+                return Utils.random(31, 140);
             } else if (random > 50) {
-                Utils.random(40, 31)
+                Utils.random(31, 40)
             }
-            return Utils.random(56, 21);
+            return Utils.random(21, 56);
         }
         for (let c of str) {
             robotjs.keyToggle(c, 'down');
-            await this.context.delay(millis());
+            await this.context.millis(getDelay());
             robotjs.keyToggle(c, 'up');
-            await this.context.delay(millis());
+            await this.context.millis(getDelay());
         }
     }
 
@@ -34,13 +34,13 @@ export class Keyboard {
         robotjs.typeStringDelayed(str, cpm);
     }
 
-    async keyTap(key: string, mod: Modifier) {
-        await this.keyToggle(key, true, mod);
-        await this.keyToggle(key, false, mod);
+    async tap(key: string, mod: Modifier) {
+        await this.toggle(key, true, mod);
+        await this.toggle(key, false, mod);
     };
 
-    async keyToggle(key: string, down: boolean, mod?: Modifier) {
-        await this.context.delay(Utils.random(110, 60));
+    async toggle(key: string, down: boolean, mod?: Modifier) {
+        await this.context.millis(Utils.random(60, 110));
         robotjs.setKeyboardDelay(0);
         if (mod === undefined) {
             robotjs.keyToggle(key, down ? 'down' : 'up');
@@ -49,13 +49,13 @@ export class Keyboard {
         }
     }
 
-    async keyComb(key: string) {
+    async combination(key: string) {
         const parts = key.split('+');
         for (let p of parts) {
-            await this.keyToggle(p, true);
+            await this.toggle(p, true);
         }
         for (let i = parts.length - 1; i >= 0; i--) {
-            await this.keyToggle(parts[i], false);
+            await this.toggle(parts[i], false);
         }
     }
 

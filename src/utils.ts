@@ -2,12 +2,11 @@ import { Mat, Rect, Vec3 } from "opencv4nodejs";
 
 export class Utils {
 
-    public static distance(x1, y1, x2, y2) {
-        return Math.sqrt((x2 -= x1) * x2 + (y2 -= y1) * y2);
-    }
-
-    public static random(max, min = 0) {
-        return Math.random() * (max - min) + min;
+    public static random(num: number, max?: number) {
+        if (max === undefined) {
+            return Math.random() * num;
+        }
+        return Math.random() * (max - num) + num;
     }
 
     public static isOutOfBounds(mat: Mat, rect: Rect) {
@@ -40,7 +39,7 @@ export class Utils {
     }
 
     public static rgbToHex(r: number, g: number, b: number) {
-        return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+        return "#" + Utils.componentToHex(r) + Utils.componentToHex(g) + Utils.componentToHex(b);
     }
 
     public static hexToVec(hex: string) {
@@ -50,13 +49,6 @@ export class Utils {
 
     public static rgbToVec(r: number, g: number = 0, b: number = 0) {
         return new Vec3(b, g, r);
-    }
-
-    public static randomPointInRect(r: Rect) {
-        return {
-            x: Math.round(Math.random() * r.width) % (r.width + 1),
-            y: Math.round(Math.random() * r.height) % (r.height + 1)
-        };
     }
 
 }

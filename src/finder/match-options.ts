@@ -10,7 +10,12 @@ export interface MatchOptions {
     lastResult?: Result;
     matchLevel?: number;
     remember?: boolean;
-    freeze?: boolean;
+    /*
+     * How many times to scale search region before giveup. Default: 1
+     */
+    autoScale?: number;
     matchMethod?: number;
     amount?: number;
+    flood?: { min: number, max: number };
+    treshhold?: { type: number, min: number, max: number };
 }

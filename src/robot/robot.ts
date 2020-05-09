@@ -1,5 +1,3 @@
-import * as cv from 'opencv4nodejs';
-import * as ioHook from 'iohook';
 import { getClip, setClip } from "./bindings";
 import { Keyboard } from './keyboard';
 import { Mouse } from './mouse';
@@ -22,8 +20,8 @@ export interface IOHookEvent {
 }
 export class Robot {
 
-    private static ioHook = false;
-
+    private static ioHook = null;
+    
     get clipboard() {
         return getClip();
     }
@@ -38,40 +36,33 @@ export class Robot {
 
     on(evt: Events, cb: (evt: IOHookEvent) => void) {
         if (!Robot.ioHook) {
-            Robot.ioHook = true;
-            ioHook.start(false);
+            Robot.ioHook = require('iohook');
+            Robot.ioHook.start(false);
         }
-        ioHook.on(evt, cb);
+        Robot.ioHook.on(evt, cb);
     }
 
     off(evt: Events, cb: (evt: IOHookEvent) => void) {
         if (Robot.ioHook) {
-            ioHook.off(evt, cb);
+            Robot.ioHook.off(evt, cb);
+            if (Robot.ioHook.eventNames().length === 0) {
+                Robot.ioHook.unload();
+                Robot.ioHook = null;
+            }
         }
     }
 
+    /**
+     * 
+     * @param callback - Function that will be repeatedly called. If returned true, then repeating will stop
+     * @param interval - Default: 0
+     */
+    async repeat(callback: () => boolean | any, interval: number = 0) {
+        return this.whileFn(async () => !await callback(), 0, interval);
+    }
 
-    async repeat(fn: () => any, interval: number = 0) {
-        return this.whileFn(async () => !await fn(), 0, interval);
-        /*return new Promise((resolve) => {
-            let result;
-            const promiseTick = () => {
-                if (result && result.then) {
-                    return result.then(promiseBind);
-                }
-                result = fn();
-                if (result === false) {
-                    return resolve();
-                }
-                return fna();
-            };
-            const fna = () => setTimeout(promiseTick, interval);
-            const promiseBind = (r) => {
-                result = r;
-                fna();
-            };
-            promiseTick();
-        });*/
+    all(...args: Promise<any>[]) {
+        return Promise.all(args);
     }
 
     repeatSync(fn: () => any, interval?: number) {
@@ -87,30 +78,31 @@ export class Robot {
         }
     }
 
-    async whileFn(fn: () => boolean | any, timeout: number = 5000, delay: number = 100) {
+    /**
+     * 
+     * @param callback - Callback which will be repeatedly called until it returns false
+     * @param timeout - Default: 5000
+     * @param delay  - Default: 100
+     */
+    async whileFn(callback: () => boolean | any, timeout: number = 5000, delay: number = 100): Promise<boolean> {
         const started = Date.now();
-        while (await fn()) {
+        while (await this.next(callback)) {
             if (timeout > 0 && Date.now() - started > timeout) {
-                return null;
+                return false;
             }
             if (delay > 0) {
-                await this.delay(delay);
+                await this.millis(delay);
             }
         }
+        return true;
     }
 
-    delay(time) {
-        return new Promise((resolve) => {
-            const end = Date.now() + time;
-            const timer = setInterval(() => {
-                if (Date.now() > end) {
-                    clearInterval(timer);
-                    resolve();
-                    return;
-                }
-                cv.waitKey(1);
-            }, 1);
-        });
+    millis(time: number) {
+        return new Promise((resolve) => process.nextTick(() => setTimeout(resolve, time)));
+    }
+
+    next<T>(cb: () => Promise<T>): Promise<T> {
+        return new Promise((resolve) => process.nextTick(async () => resolve(await cb())));
     }
 
 }

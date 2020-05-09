@@ -1,49 +1,56 @@
-import { Rect, Mat, THRESH_BINARY, FILLED, LINE_8, Vec3 } from "opencv4nodejs";
+import { Rect, Mat, THRESH_BINARY } from "opencv4nodejs";
 import { Result } from "./result";
-import { CVResult } from "./cv-result";
 import { MatchOptions } from "./match-options";
-import { MultiMatchOptions } from "./multi-match-options";
 import { Utils } from "../utils";
+import { MinMaxLoc } from "./min-max-loc";
 
+export interface MatSource {
+    (): Mat;
+}
+export interface MinMax {
+    min: number;
+    max: number;
+}
+export interface Threshold extends MinMax {
+    type: number;
+}
 export class Finder {
 
+    private _source: Mat | MatSource;
+
+    region: Rect;
     lastResult: Result;
     lastResultRegion: Rect;
-    source: Mat | (() => Mat);
-    region: Rect;
     target: Mat;
     matchMethod: number;
     matchLevel: number;
     alt: MatchOptions[];
-    remember = true;
-    freeze = false;
+    remember = false;
     mask: Mat;
-    treshhold;
-    flood;
+    treshhold: Threshold = {
+        type: THRESH_BINARY,
+        min: 0.5,
+        max: 1
+    };
+    flood: MinMax = {
+        min: 0.1,
+        max: 1
+    };
+    autoScale = 1;
 
-    constructor(options: MultiMatchOptions = {}) {
-        this.flood = options.flood || {
-            min: 0.1,
-            max: 1
-        };
-        this.treshhold = options.treshhold || {
-            type: THRESH_BINARY,
-            min: 0.5,
-            max: 1
-        };
-        this.mask = options.mask;
-        this.freeze = options.freeze || false;
-        this.remember = options.remember || true;
-        this.region = options.region;
-        this.alt = options.alt;
-        this.matchLevel = options.matchLevel;
-        this.matchMethod = options.matchMethod;
-        this.target = options.target;
-        this.source = options.source;
+    get source(): Mat {
+        if (typeof this._source === 'function') {
+            return this._source();
+        }
+        return this._source;
+    }
+
+    setSource(source: Mat | (() => Mat)) {
+        this._source = source;
     }
 
     public *findMany() {
-        const originalSource = typeof this.source === 'function' ? this.source() : this.source;
+        const originalSource = this.source;
         let source: Mat = originalSource;
         if (this.region) {
             source = source.getRegion(this.region);
@@ -51,7 +58,7 @@ export class Finder {
         let match = source
             .matchTemplate(this.target, this.matchMethod, this.mask)
             .threshold(this.treshhold.min, this.treshhold.max, this.treshhold.type);
-        let loc;
+        let loc: MinMaxLoc;
         let maxMatches = 10;
         while (maxMatches-- > 0) {
             let minMatches = 1000;
@@ -64,63 +71,36 @@ export class Finder {
                     break;
                 }
             }
-            match.drawRectangle(
-                new Rect(loc.x, loc.y, loc.w, loc.h),
-                new Vec3(0, 255, 0),
-                FILLED,
-                LINE_8
-            );
             // matched.floodFill(loc.maxLoc, 0, new Mat(), options.flood.min, options.flood.max, 4);
-            yield this.toResult(loc, this.region);
+            yield this.toResult(loc, this.region, this.target, null);
         }
     }
 
     public find() {
-        let originalSource = typeof this.source === 'function' ? this.source() : this.source;
-        if (this.region) {
-            originalSource = originalSource.getRegion(this.region);
+        let originalSource = this.source;
+        let region: Rect = this.region;
+        if (region) {
+            region = this.fixRegion(new Rect(0, 0, originalSource.cols, originalSource.rows), this.region);
+            originalSource = originalSource.getRegion(region);
             this.lastResult = null; // temporary
         }
         let source: Mat = originalSource;
         let match: Mat;
         let result;
-        let region: Rect = this.region;
-        let scalingAttempts = 1;
         // check if the target is in the last position
         if (this.lastResultRegion) {
             region = <any>this.lastResultRegion;
-            if (!this.freeze) {
-                scalingAttempts = 10;
-            }
-            //rectangle = new Rect(options.lastResult.x, options.lastResult.y, options.lastResult.width, options.lastResult.height);
-            /* if (rectangle.width < 100 || rectangle.height < 100) {
-                 const width =  (100 + Math.min(0, source.cols - (rectangle.x + rectangle.width))) / 2;
-                 const height = (100 + Math.min(0, source.rows - (rectangle.y + rectangle.height))) / 2;
-                 const x = rectangle.x - width;
-                 const y = rectangle.y - height;
-                 rectangle = new Rect(Math.max(0, x), Math.max(0, y), width - Math.min(0, x), height - Math.min(0, y));
-                 console.log('Min Rectangle: ', rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-             }*/
             if (this.region) {
                 region = new Rect(
                     region.x - this.region.x,
                     region.y - this.region.y,
                     region.width,
                     region.height
-                )
+                );
             }
-            //console.log('Getting region', region.x, region.y, region.width, region.height);
             source = source.getRegion(region);
         }
-        for (let i = 0; i < scalingAttempts; i++) {
-            /*if (rectangle) {
-                options.source.drawRectangle(
-                    rectangle,
-                    new cv.Vec3(255, 0, 0),
-                    2,
-                    cv.LINE_8
-                );
-            }*/
+        for (let i = 0; i < this.autoScale; i++) {
             if (this.mask) {
                 match = source.matchTemplate(this.target, this.matchMethod, this.mask);
             } else {
@@ -128,25 +108,23 @@ export class Finder {
             }
             result = match.minMaxLoc();
             if (result.maxVal >= this.matchLevel) {
-                return this.toResult(result, region);
-            }
-            // if target not found in last location then double search area
-            if (!this.lastResultRegion) {
-                return;
+                return this.toResult(result, region, this.target, result);
             }
             if (this.alt) {
                 for (let alt of this.alt) {
                     const matchLevel = alt.matchLevel || this.matchLevel;
-                    match = source.matchTemplate((<any>alt.target).mat, alt.matchMethod || this.matchMethod);
+                    match = source.matchTemplate(alt.target, alt.matchMethod || this.matchMethod);
                     result = match.minMaxLoc();
                     if (result.maxVal >= matchLevel) {
-                        console.log('Alternative result');
-                        return this.toResult(result, region);
+                        return this.toResult(result, region, alt.target, alt);
                     }
                 }
             }
+            // if target not found in last location then double search area
+            if (!this.lastResultRegion) {
+                break;
+            }
             region = Utils.scaleRect(region);
-            // console.log('Scaled: ', rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             if (Utils.isOutOfBounds(originalSource, region)) {
                 source = originalSource;
                 region = null;
@@ -155,23 +133,54 @@ export class Finder {
                 source = originalSource.getRegion(region);
             }
         }
+        this.reset();
     }
 
-    toResult(match: CVResult, offset?: Rect): Result {
+    private toResult(match: MinMaxLoc, offset: Rect, target: Mat, matchOptions: MatchOptions): Result {
         const result = new Result(
             match.maxLoc.x + (offset ? offset.x : 0),
             match.maxLoc.y + (offset ? offset.y : 0),
-            this.target.cols,
-            this.target.rows,
-            match.maxVal
+            target.cols,
+            target.rows,
+            match.maxVal,
+            matchOptions
         );
         if (this.remember) {
-            this.lastResultRegion = result;
+            if (this.alt && this.alt.length > 0) {
+                let minWidth = this.target.cols;
+                let minHeight = this.target.rows;
+                for (let alt of this.alt) {
+                    if (minWidth < alt.target.cols) {
+                        minWidth = alt.target.cols;
+                    }
+                    if (minHeight < alt.target.rows) {
+                        minHeight = alt.target.rows;
+                    }
+                }
+                this.lastResultRegion = new Rect(result.x, result.y, minWidth, minHeight);
+            } else {
+                this.lastResultRegion = result;
+            }
             this.lastResult = result;
         } else {
             this.reset();
         }
         return result;
+    }
+
+    private fixRegion(outer: Rect, inner: Rect) {
+        let { x, y, width, height } = inner;
+        x = Math.max(0, x);
+        y = Math.max(0, y);
+        let diff = outer.width - x - width;
+        if (diff <= 0) {
+            x += diff - 1;
+        }
+        diff = outer.height - y - height;
+        if (diff <= 0) {
+            y += diff - 1;
+        }
+        return new Rect(x, y, width, height);
     }
 
     reset() {

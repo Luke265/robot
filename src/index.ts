@@ -1,6 +1,5 @@
 export * from './vk';
 export * from './utils';
-export * from './config';
 export * from './robot/robot';
 export * from './robot/keyboard';
 export * from './robot/mouse';
@@ -9,4 +8,3 @@ export * from './finder/finder';
 export * from './finder/result';
 export * from './robot/mover';
 export * from './finder/match-options';
-export * from './finder/multi-match-options';

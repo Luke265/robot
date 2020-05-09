@@ -1,10 +1,8 @@
 import { getDesktopResolution, Capture } from "./bindings";
 import { Finder } from '../finder/finder';
-import { MatchOptions } from '../finder/match-options';
-import { MultiMatchOptions } from '../finder/multi-match-options';
-import { Result } from '../finder/result';
 import { Robot } from "./robot";
 import * as cv from 'opencv4nodejs';
+import { Result } from "../finder/result";
 
 export class Screen {
 
@@ -24,17 +22,13 @@ export class Screen {
         return this.capture.grab(this.mat, 0);
     }
 
-    findMany(options: MultiMatchOptions): IterableIterator<Result> {
-        return new Finder(options).findMany();
-    }
-
-    findOne(options: MatchOptions): Result {
-        return new Finder(options).find();
-    }
-
     async untilFound(finder: Finder, timeout?: number, delay?: number) {
-        let result;
-        await this.context.whileFn(() => !(result = this.refresh() && finder.find()), timeout, delay);
+        let result: Result;
+        await this.context.whileFn(() => {
+            this.refresh();
+            result = finder.find();
+            return !result;
+        }, timeout, delay);
         return result;
     }
 

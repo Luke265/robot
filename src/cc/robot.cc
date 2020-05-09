@@ -101,7 +101,9 @@ void setClip(const Nan::FunctionCallbackInfo<v8::Value> &info)
   if (OpenClipboard(NULL))
   {
     HGLOBAL clipbuffer;
-    v8::String::Utf8Value param1(info[0]->ToString());
+	v8::Isolate* isolate = info.GetIsolate();
+	v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+    v8::String::Utf8Value param1(isolate, info[0]);
     std::string str = std::string(*param1);
     std::wstring source = utf8_to_utf16(str);
     EmptyClipboard();
@@ -127,12 +129,12 @@ void getClip(const Nan::FunctionCallbackInfo<v8::Value> &info)
 }
 void find(const Nan::FunctionCallbackInfo<v8::Value> &info)
 {
-  v8::Local<v8::Object> matHandle = info[0]->ToObject();
-  Mat *matObj = Nan::ObjectWrap::Unwrap<Mat>(matHandle);
-  cv::Mat source = matObj->mat;
-  matHandle = info[1]->ToObject();
-  matObj = Nan::ObjectWrap::Unwrap<Mat>(matHandle);
-  cv::Mat target = matObj->mat;
+	v8::Isolate* isolate = info.GetIsolate();
+	v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+  v8::Local<v8::Object> matHandle = info[0]->ToObject(ctx).ToLocalChecked();
+  cv::Mat source = Mat::Converter::unwrapUnchecked(matHandle);
+  matHandle = info[1]->ToObject(ctx).ToLocalChecked();
+  cv::Mat target = Mat::Converter::unwrapUnchecked(matHandle);
   int pos = 0;
   int tx = 0;
   int ty = 0;
@@ -144,7 +146,7 @@ void find(const Nan::FunctionCallbackInfo<v8::Value> &info)
   uchar targetB = 0;
   uchar targetG = 0;
   uchar targetR = 0;
-  int maxDiff = info[2]->Int32Value();
+  int maxDiff = info[2]->ToInt32(ctx).ToLocalChecked()->Value();
   int width = source.cols - target.cols;
   int height = source.rows - target.rows;
   int i = 0;
@@ -259,17 +261,34 @@ void screenMat(const Nan::FunctionCallbackInfo<v8::Value> &info)
 void Init(v8::Local<v8::Object> exports)
 {
   Capture::Init(exports);
-  exports->Set(Nan::New("find").ToLocalChecked(),
-               Nan::New<v8::FunctionTemplate>(find)->GetFunction());
+  v8::Isolate* isolate = exports->GetIsolate();
+  v8::Local<v8::Context> ctx = isolate->GetCurrentContext();
+ /* v8::String::NewFromOneByte(isolate, "find").ToLocalChecked();
+  Nan::Set(
+	  exports,
+	  Nan::New("find").ToLocalChecked(),
+       Nan::New<v8::FunctionTemplate>(find)->GetFunction(ctx).ToLocalChecked()
+  );
   exports->Set(Nan::New("getClip").ToLocalChecked(),
                Nan::New<v8::FunctionTemplate>(getClip)->GetFunction());
   exports->Set(Nan::New("setClip").ToLocalChecked(),
                Nan::New<v8::FunctionTemplate>(setClip)->GetFunction());
   exports->Set(Nan::New("getDesktopResolution").ToLocalChecked(),
-               Nan::New<v8::FunctionTemplate>(getDesktopResolution)->GetFunction());
+               Nan::New<v8::FunctionTemplate>(getDesktopResolution)->GetFunction());*/
+  //Nan::Set(exports, Nan::New<v8::String>("find").ToLocalChecked(), ctor->GetFunction(find).ToLocalChecked());
+//Nan::Set(exports, Nan::New<v8::String>("getClip").ToLocalChecked(), ctor->GetFunction(getClip).ToLocalChecked());
+//Nan::Set(exports, Nan::New<v8::String>("setClip").ToLocalChecked(), ctor->GetFunction(setClip).ToLocalChecked());
+//Nan::Set(exports, Nan::New<v8::String>("getDesktopResolution").ToLocalChecked(), ctor->GetFunction(getDesktopResolution).ToLocalChecked());
+
+  exports->Set(ctx, Nan::New<v8::String>("find").ToLocalChecked(), Nan::New<v8::FunctionTemplate>(find)->GetFunction(ctx).ToLocalChecked());
+  exports->Set(ctx, Nan::New<v8::String>("getClip").ToLocalChecked(), Nan::New<v8::FunctionTemplate>(getClip)->GetFunction(ctx).ToLocalChecked());
+  exports->Set(ctx, Nan::New<v8::String>("setClip").ToLocalChecked(), Nan::New<v8::FunctionTemplate>(setClip)->GetFunction(ctx).ToLocalChecked());
+  exports->Set(ctx, Nan::New<v8::String>("getDesktopResolution").ToLocalChecked(), Nan::New<v8::FunctionTemplate>(getDesktopResolution)->GetFunction(ctx).ToLocalChecked());
 }
 
-NODE_MODULE(addon, Init)
+NODE_MODULE_INIT() {
+	Init(exports);
+}
 /*
 napi_value Method(napi_env env, napi_callback_info info) {
   napi_status status;

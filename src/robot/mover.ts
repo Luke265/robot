@@ -6,84 +6,61 @@ export interface Options {
     gravity?: number;
 }
 
+const sqrt3 = Math.sqrt(3);
+const sqrt5 = Math.sqrt(5);
+
 export class Mover {
-    xs = 0;
-    ys = 0;
     veloX = 0;
     veloY = 0;
     windX = 0;
     windY = 0;
-    veloMag;
-    sqrt2 = Math.sqrt(2);
-    sqrt3 = Math.sqrt(3);
-    sqrt5 = Math.sqrt(5);
-    maxStep;
-    randomDist;
-    get dist() {
-        return Math.round(Math.hypot(this.xs - this.x, this.ys - this.y));
-    }
     stopped = false;
-    D;
-    startLocation;
-    constructor(private x: number, private y: number, private options: Options) {
-        if (options.gravity < 3 || options.gravity > 30) {
-            throw new Error("Invalid mouse gravity");
+    options: Options;
+    constructor(private x: number, private y: number, options?: Options) {
+        this.options = {
+            gravity: 15,
+            wind: 10,
+            ...options
+        };
+        if (this.options.gravity < 3 || this.options.gravity > 30) {
+            throw new Error("Gravity must be between 3 and 30");
         }
-        if (options.wind < 1 || options.wind > 30) {
-            throw new Error("Invalid mouse wind");
+        if (this.options.wind < 1 || this.options.wind > 30) {
+            throw new Error("Wind speed must be between 1 and 30");
         }
     }
 
     step() {
-        if (this.stopped) {
+        const t = this;
+        if (t.stopped) {
             return false;
         }
-        this.startLocation = robotjs.getMousePos();
-        this.xs = this.startLocation.x;
-        this.ys = this.startLocation.y;
-        const dist = this.dist;
-        if (dist < 1) {
-            const x = Math.round(this.x);
-            const y = Math.round(this.y);
-            if (x != Math.round(this.xs) || y != Math.round(this.ys)) {
-                robotjs.moveMouse(x, y);
-            }
-            this.stopped = true;
+        const { x, y } = robotjs.getMousePos();
+        const dist = Math.hypot(x - t.x, y - t.y);
+        const wind = Math.min(t.options.wind, dist);
+        if (dist <= 1) {
+            robotjs.moveMouse(t.x, t.y);
             return false;
         }
-        this.options.wind = Math.min(this.options.wind, dist);
-        this.D = Utils.random(
-            Math.min(dist, 20),
-            Math.min(dist, 1)
+        const randomStepSize = Utils.random(1, 20);
+        const maxStep = Math.min(randomStepSize, dist);
+        robotjs.setMouseDelay(Utils.random(10));
+        t.windX = t.windX / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
+        t.windY = t.windY / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
+        t.veloX = t.veloX + Utils.random(t.windX);
+        t.veloY = t.veloY + Utils.random(t.windY);
+        t.veloX = t.veloX + t.options.gravity * (t.x - x) / dist;
+        t.veloY = t.veloY + t.options.gravity * (t.y - y) / dist;
+        if (Math.hypot(t.veloX, t.veloY) > maxStep) {
+            const randomDist = maxStep / 2.0 + Utils.random(maxStep / 2);
+            const veloMag = Math.sqrt(t.veloX * t.veloX + t.veloY * t.veloY);
+            t.veloX = (t.veloX / veloMag) * randomDist;
+            t.veloY = (t.veloY / veloMag) * randomDist;
+        }
+        robotjs.moveMouse(
+            Math.ceil(x + t.veloX),
+            Math.ceil(y + t.veloY)
         );
-        if (Math.random() > 0.3) {
-            robotjs.setMouseDelay(Math.round(Math.random() * 10));
-        }
-        if (this.D <= dist) {
-            this.maxStep = this.D;
-        } else {
-            this.maxStep = dist;
-        }
-        if (dist >= 1) {
-            this.windX = this.windX / this.sqrt3 + (Utils.random(Math.round(this.options.wind * 2 + 1)) - this.options.wind) / this.sqrt5;
-            this.windY = this.windY / this.sqrt3 + (Utils.random(Math.round(this.options.wind * 2 + 1)) - this.options.wind) / this.sqrt5;
-        } else {
-            this.windX = this.windX / this.sqrt2;
-            this.windY = this.windY / this.sqrt2;
-        }
-        this.veloX = this.veloX + Utils.random(this.windX);
-        this.veloY = this.veloY + Utils.random(this.windY);
-        this.veloX = this.veloX + this.options.gravity * (this.x - this.xs) / dist;
-        this.veloY = this.veloY + this.options.gravity * (this.y - this.ys) / dist;
-        if (Math.hypot(this.veloX, this.veloY) > this.maxStep) {
-            this.randomDist = this.maxStep / 2.0 + Utils.random(Math.round(Math.ceil(this.maxStep / 2)));
-            this.veloMag = Math.sqrt(this.veloX * this.veloX + this.veloY * this.veloY);
-            this.veloX = (this.veloX / this.veloMag) * this.randomDist;
-            this.veloY = (this.veloY / this.veloMag) * this.randomDist;
-        }
-        this.xs = Math.round(this.xs + this.veloX);
-        this.ys = Math.round(this.ys + this.veloY);
-        robotjs.moveMouse(this.xs, this.ys);
         return true;
     }
 

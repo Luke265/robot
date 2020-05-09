@@ -3,18 +3,19 @@
 #include <VersionHelpers.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core.hpp>
+#include "capture\CAPTURE.H"
 
 Nan::Persistent<v8::FunctionTemplate> Capture::constructor;
 
 NAN_MODULE_INIT(Capture::Init)
 {
     v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(Capture::New);
+	v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
     Capture::constructor.Reset(ctor);
     ctor->InstanceTemplate()->SetInternalFieldCount(1);
     ctor->SetClassName(Nan::New("Capture").ToLocalChecked());
     Nan::SetPrototypeMethod(ctor, "grab", grab);
-
-    target->Set(Nan::New("Capture").ToLocalChecked(), ctor->GetFunction());
+	Nan::Set(target, Nan::New<v8::String>("Capture").ToLocalChecked(), ctor->GetFunction(ctx).ToLocalChecked());
 };
 
 NAN_METHOD(Capture::New)
@@ -30,15 +31,18 @@ NAN_METHOD(Capture::New)
     }
     self->capture->init();
     self->Wrap(info.Holder());
-    FF_RETURN(info.Holder());
+	info.GetReturnValue().Set(info.Holder());
 }
 
 NAN_METHOD(Capture::grab)
 {
-    FF_METHOD_CONTEXT("Capture::grab");
-    cv::Mat *mat = &FF_UNWRAP_MAT_AND_GET(info[0]->ToObject());
+	v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
+	cv::Mat mat = Mat::Converter::unwrapUnchecked(info[0]->ToObject(ctx).ToLocalChecked());
     robot::Capture* capture = Nan::ObjectWrap::Unwrap<Capture>(info.This())->capture;
-    FF_ARG_INT_IFDEF(1, int block, 0);
-    capture->grab(mat, block);
-    FF_RETURN(true);
+	int block = 0;
+	if (info.Length() > 1 && info[1]->IsInt32()) {
+		block = info[1]->ToInt32(ctx).ToLocalChecked()->Value();
+	}
+    capture->grab(&mat, block);
+	info.GetReturnValue().Set(true);
 }
