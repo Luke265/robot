@@ -12,6 +12,7 @@
 #include "win_capture.h"
 #include "CComPtrCustom.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>
 #pragma comment(lib, "D3D11.lib")
 
@@ -40,6 +41,9 @@ class robot::Win8Capture : public robot::Capture
 	{
 		if (baseMat == NULL || baseMat->rows != mat->rows || baseMat->cols != mat->cols)
 		{
+			if (baseMat != NULL) {
+				baseMat->release();
+			}
 			baseMat = new cv::Mat(mat->rows, mat->cols, CV_8UC4);
 		}
 		HRESULT hr(E_FAIL);
@@ -64,20 +68,21 @@ class robot::Win8Capture : public robot::Capture
 
 			if (lDestImage == nullptr)
 				return false;
-
 			lImmediateContext->CopyResource(lDestImage, lAcquiredDesktopImage);
 			lAcquiredDesktopImage.Release();
 			// Copy from CPU access texture to bitmap buffer
 
 			UINT subresource = D3D11CalcSubresource(0, 0, 0);
+			D3D11_TEXTURE2D_DESC *des = new D3D11_TEXTURE2D_DESC;
 			D3D11_MAPPED_SUBRESOURCE *pRes = new D3D11_MAPPED_SUBRESOURCE;
+			lDestImage->GetDesc(des);
 			lImmediateContext->Map(lDestImage, subresource, D3D11_MAP_READ_WRITE, 0, pRes);
 			lDestImage.Release();
 			lDeskDupl->ReleaseFrame();
 			if (pRes->pData != NULL)
 			{
 				baseMat->data = reinterpret_cast<uchar *>(pRes->pData);
-				baseMat->assignTo(*mat, mat->type());
+				cv::cvtColor(*baseMat, *mat, CV_RGBA2RGB);
 			}
 		}
 		else if (hr == DXGI_ERROR_WAIT_TIMEOUT)
@@ -85,7 +90,7 @@ class robot::Win8Capture : public robot::Capture
 			// ignore
 			if (baseMat != NULL)
 			{
-				baseMat->assignTo(*mat, mat->type());
+				cv::cvtColor(*baseMat, *mat, CV_RGBA2RGB);
 			}
 			return false;
 			//if(resource.pData == NULL) {
