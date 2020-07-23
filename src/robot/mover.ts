@@ -4,6 +4,7 @@ import * as robotjs from 'robotjs';
 export interface Options {
     wind?: number;
     gravity?: number;
+    stepDelay?: number;
 }
 
 const sqrt3 = Math.sqrt(3);
@@ -14,6 +15,9 @@ export class Mover {
     veloY = 0;
     windX = 0;
     windY = 0;
+    stepDelay = 10;
+    lastX: number | null = null;
+    lastY: number | null = null;
     stopped = false;
     options: Options;
     constructor(private x: number, private y: number, options?: Options) {
@@ -22,11 +26,14 @@ export class Mover {
             wind: 10,
             ...options
         };
-        if (this.options.gravity < 3 || this.options.gravity > 30) {
-            throw new Error("Gravity must be between 3 and 30");
+        if (this.options.gravity < 0) {
+            throw new Error("Invalid gravity option");
         }
-        if (this.options.wind < 1 || this.options.wind > 30) {
-            throw new Error("Wind speed must be between 1 and 30");
+        if (this.options.wind < 0) {
+            throw new Error("Illegal wind option");
+        }
+        if (this.options.stepDelay < 0) {
+            throw new Error("Illegal stepDelay option");
         }
     }
 
@@ -36,6 +43,9 @@ export class Mover {
             return false;
         }
         const { x, y } = robotjs.getMousePos();
+        if (t.lastX !== null && t.lastY !== null && (t.lastX != x || t.lastY != y)) {
+            throw new Error('Mouse movement interrupted');
+        }
         const dist = Math.hypot(x - t.x, y - t.y);
         const wind = Math.min(t.options.wind, dist);
         if (dist <= 1) {
@@ -44,7 +54,7 @@ export class Mover {
         }
         const randomStepSize = Utils.random(1, 20);
         const maxStep = Math.min(randomStepSize, dist);
-        robotjs.setMouseDelay(Utils.random(10));
+        robotjs.setMouseDelay(Utils.random(t.stepDelay));
         t.windX = t.windX / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.windY = t.windY / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.veloX = t.veloX + Utils.random(t.windX);
@@ -57,10 +67,9 @@ export class Mover {
             t.veloX = (t.veloX / veloMag) * randomDist;
             t.veloY = (t.veloY / veloMag) * randomDist;
         }
-        robotjs.moveMouse(
-            Math.ceil(x + t.veloX),
-            Math.ceil(y + t.veloY)
-        );
+        t.lastX = Math.ceil(x + t.veloX);
+        t.lastY = Math.ceil(y + t.veloY);
+        robotjs.moveMouse(t.lastX, t.lastY);
         return true;
     }
 
