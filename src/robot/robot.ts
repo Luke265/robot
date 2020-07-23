@@ -21,7 +21,7 @@ export interface IOHookEvent {
 export class Robot {
 
     private static ioHook = null;
-    
+
     get clipboard() {
         return getClip();
     }
@@ -57,7 +57,7 @@ export class Robot {
      * @param callback - Function that will be repeatedly called. If returned true, then repeating will stop
      * @param interval - Default: 0
      */
-    async repeat(callback: () => boolean | any, interval: number = 0) {
+    repeat(callback: () => boolean | any, interval: number = 0) {
         return this.whileFn(async () => !await callback(), 0, interval);
     }
 
@@ -102,7 +102,13 @@ export class Robot {
     }
 
     next<T>(cb: () => Promise<T>): Promise<T> {
-        return new Promise((resolve) => process.nextTick(async () => resolve(await cb())));
+        return new Promise((resolve, reject) => process.nextTick(async () => {
+            try {
+                resolve(await cb());
+            } catch (e) {
+                reject(e);
+            }
+        }));
     }
 
 }

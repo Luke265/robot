@@ -56,7 +56,7 @@ export class Mouse {
         while (mover.step());
     }
 
-    async move(x: number, y: number, options?: Options) {
+    move(x: number, y: number, options?: Options) {
         //return this.workerCommand('move', x, y, options);
         if (Mouse.moving) {
             Mouse.moving.stopped = true;
