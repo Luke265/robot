@@ -18,4 +18,5 @@ export interface MatchOptions {
     amount?: number;
     flood?: { min: number, max: number };
     treshhold?: { type: number, min: number, max: number };
+    startRegion?: Rect;
 }

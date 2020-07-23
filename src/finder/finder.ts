@@ -36,6 +36,7 @@ export class Finder {
         min: 0.1,
         max: 1
     };
+    startRegion: Rect | null = null;
     autoScale = 1;
 
     get source(): Mat {
@@ -77,66 +78,69 @@ export class Finder {
     }
 
     public find() {
-        let originalSource = this.source;
+        let originalSource: Mat = this.source;
+        let searchSource: Mat = originalSource;
         let region: Rect = this.region;
         if (region) {
             region = this.fixRegion(new Rect(0, 0, originalSource.cols, originalSource.rows), this.region);
-            originalSource = originalSource.getRegion(region);
+            searchSource = originalSource.getRegion(region);
             this.lastResult = null; // temporary
         }
-        let source: Mat = originalSource;
+        let source: Mat = searchSource;
         let match: Mat;
-        let result;
+        let result: any;
+        let searchRegion = region;
         // check if the target is in the last position
+        if (this.startRegion && !this.lastResultRegion) {
+            this.lastResultRegion = this.startRegion;
+        }
         if (this.lastResultRegion) {
-            region = <any>this.lastResultRegion;
-            if (this.region) {
-                region = new Rect(
-                    region.x - this.region.x,
-                    region.y - this.region.y,
-                    region.width,
-                    region.height
-                );
-            }
-            source = source.getRegion(region);
+            searchRegion = this.lastResultRegion;
+            source = searchSource.getRegion(this.lastResultRegion);
         }
         for (let i = 0; i < this.autoScale; i++) {
-            if (this.mask) {
-                match = source.matchTemplate(this.target, this.matchMethod, this.mask);
-            } else {
-                match = source.matchTemplate(this.target, this.matchMethod);
-            }
-            result = match.minMaxLoc();
-            if (result.maxVal >= this.matchLevel) {
-                return this.toResult(result, region, this.target, result);
+            if (source.cols > this.target.cols && source.rows > this.target.rows) {
+                if (this.mask) {
+                    match = source.matchTemplate(this.target, this.matchMethod, this.mask);
+                } else {
+                    match = source.matchTemplate(this.target, this.matchMethod);
+                }
+                result = match.minMaxLoc();
+                if (result.maxVal >= this.matchLevel) {
+                    return this.toResult(result, searchRegion, this.target, result);
+                }
             }
             if (this.alt) {
                 for (let alt of this.alt) {
+                    if (alt.target.cols > source.cols || alt.target.rows > source.rows) {
+                        continue;
+                    }
                     const matchLevel = alt.matchLevel || this.matchLevel;
                     match = source.matchTemplate(alt.target, alt.matchMethod || this.matchMethod);
                     result = match.minMaxLoc();
                     if (result.maxVal >= matchLevel) {
-                        return this.toResult(result, region, alt.target, alt);
+                        return this.toResult(result, searchRegion, alt.target, alt);
                     }
                 }
             }
-            // if target not found in last location then double search area
+            // if target not found in last location then increase the search area
+            // only double search if we have a lead
             if (!this.lastResultRegion) {
                 break;
             }
-            region = Utils.scaleRect(region);
-            if (Utils.isOutOfBounds(originalSource, region)) {
-                source = originalSource;
-                region = null;
+            searchRegion = Utils.scaleRect(searchRegion);
+            if (Utils.isOutOfBounds(searchSource, searchRegion)) {
+                source = searchSource;
+                searchRegion = region;
                 this.lastResultRegion = this.lastResult = null;
             } else {
-                source = originalSource.getRegion(region);
+                source = searchSource.getRegion(searchRegion);
             }
         }
         this.reset();
     }
 
-    private toResult(match: MinMaxLoc, offset: Rect, target: Mat, matchOptions: MatchOptions): Result {
+    private toResult(match: MinMaxLoc, offset: Rect | null | undefined, target: Mat, matchOptions: MatchOptions): Result {
         const result = new Result(
             match.maxLoc.x + (offset ? offset.x : 0),
             match.maxLoc.y + (offset ? offset.y : 0),
