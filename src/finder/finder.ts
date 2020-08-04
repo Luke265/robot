@@ -95,11 +95,13 @@ export class Finder {
             this.lastResultRegion = this.startRegion;
         }
         if (this.lastResultRegion) {
-            searchRegion = this.lastResultRegion;
-            source = searchSource.getRegion(this.lastResultRegion);
+            if (!Utils.isOutOfBounds(searchSource, this.lastResultRegion)) {
+                searchRegion = this.lastResultRegion;
+                source = searchSource.getRegion(this.lastResultRegion);
+            }
         }
         for (let i = 0; i < this.autoScale; i++) {
-            if (source.cols > this.target.cols && source.rows > this.target.rows) {
+            if (source.cols >= this.target.cols && source.rows >= this.target.rows) {
                 if (this.mask) {
                     match = source.matchTemplate(this.target, this.matchMethod, this.mask);
                 } else {
@@ -161,7 +163,7 @@ export class Finder {
                         minHeight = alt.target.rows;
                     }
                 }
-                this.lastResultRegion = new Rect(result.x, result.y, minWidth, minHeight);
+                this.lastResultRegion = new Rect(match.maxLoc.x, match.maxLoc.y, minWidth, minHeight);
             } else {
                 this.lastResultRegion = result;
             }
