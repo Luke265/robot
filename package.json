@@ -8,13 +8,13 @@
   "private": true,
   "dependencies": {
     "bindings": "^1.5.0",
-    "iohook": "^0.6.5",
+    "iohook": "^0.6.6",
     "nan": "^2.14.1",
-    "opencv4nodejs": "github:Luke265/opencv4nodejs",
+    "opencv4nodejs": "^5.6.0",
     "robotjs": "github:Luke265/robotjs"
   },
   "devDependencies": {
-    "@types/node": "^13.13.5"
+    "@types/node": "^14.10.0"
   },
   "gypfile": true
 }

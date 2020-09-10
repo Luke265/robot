@@ -77,8 +77,8 @@
 					"files": [
 						"<(PRODUCT_DIR)/robot.node",
 						"node_modules/opencv4nodejs/build/Release/opencv4nodejs.node",
-						"node_modules/iohook/builds/node-v79-win32-x64/build/Release/iohook.node",
-						"node_modules/iohook/builds/node-v79-win32-x64/build/Release/uiohook.dll",
+						"node_modules/iohook/builds/node-v83-win32-x64/build/Release/iohook.node",
+						"node_modules/iohook/builds/node-v83-win32-x64/build/Release/uiohook.dll",
 						"node_modules/robotjs/build/Release/robotjs.node"
 					],
 					"destination": "./dist"
