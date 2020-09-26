@@ -1,4 +1,6 @@
 #include <opencv2/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include "NativeNodeUtils.h"
 #include "capture/win_capture.h"
 #include "capture/win7_capture.h"
