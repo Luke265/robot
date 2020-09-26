@@ -2,9 +2,10 @@ import { Utils } from "../utils";
 import * as robotjs from 'robotjs';
 
 export interface Options {
-    wind?: number;
-    gravity?: number;
-    stepDelay?: number;
+    wind: number;
+    gravity: number;
+    stepDelay: number;
+    interruptThreshold: number;
 }
 
 const sqrt3 = Math.sqrt(3);
@@ -15,15 +16,16 @@ export class Mover {
     veloY = 0;
     windX = 0;
     windY = 0;
-    stepDelay = 10;
     lastX: number | null = null;
     lastY: number | null = null;
     stopped = false;
     options: Options;
-    constructor(private x: number, private y: number, options?: Options) {
+    constructor(private x: number, private y: number, options?: Partial<Options>) {
         this.options = {
-            gravity: 15,
             wind: 10,
+            gravity: 15,
+            stepDelay: 10,
+            interruptThreshold: 10,
             ...options
         };
         if (this.options.gravity < 0) {
@@ -43,7 +45,13 @@ export class Mover {
             return false;
         }
         const { x, y } = robotjs.getMousePos();
-        if (t.lastX !== null && t.lastY !== null && (t.lastX != x || t.lastY != y)) {
+        const interruptThreshold = t.options.interruptThreshold;
+        if (
+            interruptThreshold > -1 &&
+            t.lastX !== null &&
+            t.lastY !== null &&
+            (Math.abs(t.lastX - x) > interruptThreshold || (Math.abs(t.lastY - y) > interruptThreshold))
+        ) {
             throw new Error('Mouse movement interrupted');
         }
         const dist = Math.hypot(x - t.x, y - t.y);
@@ -54,7 +62,7 @@ export class Mover {
         }
         const randomStepSize = Utils.random(1, 20);
         const maxStep = Math.min(randomStepSize, dist);
-        robotjs.setMouseDelay(Utils.random(t.stepDelay));
+        robotjs.setMouseDelay(Utils.random(t.options.stepDelay));
         t.windX = t.windX / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.windY = t.windY / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.veloX = t.veloX + Utils.random(t.windX);

@@ -48,7 +48,7 @@ export class Mouse {
         }
     }
 
-    moveSync(x: number, y: number, options?: Options) {
+    moveSync(x: number, y: number, options?: Partial<Options>) {
         if (Mouse.moving) {
             Mouse.moving.stopped = true;
         }
@@ -56,13 +56,13 @@ export class Mouse {
         while (mover.step());
     }
 
-    move(x: number, y: number, options?: Options) {
+    move(x: number, y: number, options?: Partial<Options>) {
         //return this.workerCommand('move', x, y, options);
         if (Mouse.moving) {
             Mouse.moving.stopped = true;
         }
         const mover = Mouse.moving = new Mover(x, y, options);
-        return this.context.whileFn(() => !mover.stopped && mover.step(), 30000, 0);
+        return this.context.whileFn(mover.step.bind(mover), 30000, 0);
     }
 
     /*private workerCommand(command: string, ...args: any[]) {
