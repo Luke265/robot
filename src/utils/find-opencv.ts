@@ -1,4 +1,5 @@
 "use strict";
+import * as path from 'path';
 
 var exec = require("child_process").exec;
 var fs = require("fs");
@@ -31,13 +32,13 @@ function main(){
 //======================Windows Specific=======================================
 
 function fallback(){
-    exec("echo %OPENCV_DIR%", function(error, stdout, stderr){
+    exec("echo %OPENCV_LIB_DIR%", function(error, stdout, stderr){
         stdout = cleanupEchoOutput(stdout);
         if(error){
-            throw new Error("ERROR: There was an error reading OPENCV_DIR");
+            throw new Error("ERROR: There was an error reading OPENCV_LIB_DIR");
         }
-        else if(stdout === "%OPENCV_DIR%") {
-            throw new Error("ERROR: OPENCV_DIR doesn't seem to be defined");
+        else if(stdout === "%OPENCV_LIB_DIR%") {
+            throw new Error("ERROR: OPENCV_LIB_DIR doesn't seem to be defined");
         }
         else {
             printPaths(stdout);
@@ -47,11 +48,11 @@ function fallback(){
 
 function printPaths(opencvPath){
     if(flag === "--cflags") {
-        console.log("\"" + opencvPath + "\\..\\..\\include\"");
-        console.log("\"" + opencvPath + "\\..\\..\\include\\opencv\"");
+        const includeDir = path.join(opencvPath, '..', '..', '..', 'include\\').replace(/\\/g, '/');
+        console.log(includeDir);
     }
     else if(flag === "--libs") {
-        var libPath = opencvPath + "\\lib\\";
+        var libPath = opencvPath + "\\";
 
         fs.readdir(libPath, function(err, files){
             if(err){
