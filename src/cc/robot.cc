@@ -117,14 +117,16 @@ void setClip(const Nan::FunctionCallbackInfo<v8::Value> &info)
 }
 void getClip(const Nan::FunctionCallbackInfo<v8::Value> &info)
 {
-  if (OpenClipboard(NULL) && IsClipboardFormatAvailable(CF_UNICODETEXT))
+  if (OpenClipboard(NULL))
   {
-    v8::Isolate *isolate = info.GetIsolate();
-    HANDLE data = GetClipboardData(CF_UNICODETEXT);
-    v8::MaybeLocal<v8::String> num = v8::String::NewFromTwoByte(isolate, (uint16_t *)GlobalLock(data));
-    GlobalUnlock(data);
+    if (IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+      v8::Isolate *isolate = info.GetIsolate();
+      HANDLE data = GetClipboardData(CF_UNICODETEXT);
+      v8::MaybeLocal<v8::String> num = v8::String::NewFromTwoByte(isolate, (uint16_t *)GlobalLock(data));
+      GlobalUnlock(data);
+      info.GetReturnValue().Set(num.ToLocalChecked());
+    }
     CloseClipboard();
-    info.GetReturnValue().Set(num.ToLocalChecked());
   }
 }
 void find(const Nan::FunctionCallbackInfo<v8::Value> &info)
