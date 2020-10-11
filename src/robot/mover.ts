@@ -4,7 +4,7 @@ import * as robotjs from 'robotjs';
 export interface Options {
     wind: number;
     gravity: number;
-    stepDelay: number;
+    maxStep: number;
     interruptThreshold: number;
 }
 
@@ -24,7 +24,7 @@ export class Mover {
         this.options = {
             wind: 10,
             gravity: 15,
-            stepDelay: 10,
+            maxStep: 100,
             interruptThreshold: 10,
             ...options
         };
@@ -34,9 +34,10 @@ export class Mover {
         if (this.options.wind < 0) {
             throw new Error("Illegal wind option");
         }
-        if (this.options.stepDelay < 0) {
-            throw new Error("Illegal stepDelay option");
+        if (this.options.maxStep < 0) {
+            throw new Error("Illegal maxStep option");
         }
+        robotjs.setMouseDelay(1);
     }
 
     step() {
@@ -56,13 +57,13 @@ export class Mover {
         }
         const dist = Math.hypot(x - t.x, y - t.y);
         const wind = Math.min(t.options.wind, dist);
-        if (dist <= 1) {
+        // weird problem with rounding in robotjs, so it must be greater than 1
+        if (dist <= 5) {
             robotjs.moveMouse(t.x, t.y);
             return false;
         }
-        const randomStepSize = Utils.random(1, 20);
+        const randomStepSize = Utils.random(1, t.options.maxStep);
         const maxStep = Math.min(randomStepSize, dist);
-        robotjs.setMouseDelay(Utils.random(t.options.stepDelay));
         t.windX = t.windX / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.windY = t.windY / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.veloX = t.veloX + Utils.random(t.windX);
