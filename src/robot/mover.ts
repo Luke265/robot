@@ -62,7 +62,7 @@ export class Mover {
             robotjs.moveMouse(t.x, t.y);
             return false;
         }
-        const randomStepSize = Utils.random(1, t.options.maxStep);
+        const randomStepSize = Utils.random(1, Math.min(t.options.maxStep, dist));
         const maxStep = Math.min(randomStepSize, dist);
         t.windX = t.windX / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
         t.windY = t.windY / sqrt3 + (Utils.random(wind * 2 + 1) - wind) / sqrt5;
