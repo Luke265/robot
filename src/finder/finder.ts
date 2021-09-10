@@ -111,6 +111,8 @@ export class Finder {
                 if (result.maxVal >= this.matchLevel) {
                     return this.toResult(result, searchRegion, this.target, result);
                 }
+            } else if (i === 0) {
+                throw new Error(`Source (${source.cols}x${source.rows}) is smaller than target (${this.target.cols}x${this.target.rows})`)
             }
             if (this.alt) {
                 for (let alt of this.alt) {
