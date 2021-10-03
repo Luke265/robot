@@ -1,8 +1,8 @@
-import { Point2 } from 'opencv4nodejs';
+import { Point2 } from "../cv";
 
 export interface MinMaxLoc {
     minVal: number;
     maxVal: number;
-    minLoc: Point2; 
+    minLoc: Point2;
     maxLoc: Point2;
 }

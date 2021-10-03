@@ -1,4 +1,4 @@
-import { Mat, Rect } from "opencv4nodejs";
+import { Mat, Rect } from "../cv";
 import { Result } from "./result";
 
 export interface MatchOptions {
@@ -16,7 +16,7 @@ export interface MatchOptions {
     autoScale?: number;
     matchMethod?: number;
     amount?: number;
-    flood?: { min: number, max: number };
-    treshhold?: { type: number, min: number, max: number };
+    flood?: { min: number; max: number };
+    treshhold?: { type: number; min: number; max: number };
     startRegion?: Rect;
 }

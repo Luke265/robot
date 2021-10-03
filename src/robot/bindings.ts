@@ -1,6 +1,6 @@
-const robot = require('bindings')('robot');
+import { loadNativeModule } from "../utils/native";
+import type * as R from "../../typings/robot/types.d";
 
-export const Capture = robot.Capture;
-export const getClip: () => string = robot.getClip;
-export const setClip: (str: string) => void = robot.setClip;
-export const getDesktopResolution: () => number[] = robot.getDesktopResolution;
+const Robot = loadNativeModule("robot.node") as typeof R;
+
+export = Robot;

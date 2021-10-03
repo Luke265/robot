@@ -1,36 +1,18 @@
 import { getDesktopResolution, Capture } from "./bindings";
-import { Finder } from '../finder/finder';
-import { Robot } from "./robot";
-import * as cv from 'opencv4nodejs';
-import { Result } from "../finder/result";
-import { Mat } from "opencv4nodejs";
+import { CV_8UC3, Mat } from "../cv";
 
-export class Screen {
+let mat: Mat | null = null;
+let instance: Capture | null = null;
 
-    mat: cv.Mat;
-    capture: any;
+export function lastCapture() {
+    return mat!;
+}
 
-    constructor(private context: Robot) {
-
+export function capture(screen: number = 0, target?: Mat) {
+    if (!instance) {
+        instance = new Capture();
+        const [width, height] = getDesktopResolution();
+        mat = new Mat(Math.ceil(height / 8) * 8, Math.ceil(width / 8) * 8, CV_8UC3);
     }
-
-    refresh(screen: number = 0, mat?: Mat) {
-        if (!this.capture) {
-            this.capture = new Capture();
-            const [width, height] = getDesktopResolution();
-            this.mat = new cv.Mat(Math.ceil(height / 8) * 8, Math.ceil(width / 8) * 8, cv.CV_8UC3);
-        }
-        return this.capture.grab(mat || this.mat, screen);
-    }
-
-    async untilFound(finder: Finder, timeout?: number, delay?: number) {
-        let result: Result;
-        await this.context.whileFn(() => {
-            this.refresh();
-            result = finder.find();
-            return !result;
-        }, timeout, delay);
-        return result;
-    }
-
+    return instance.grab(target! || mat!, screen);
 }

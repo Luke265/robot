@@ -1,20 +1,50 @@
 {
-  "name": "robot",
-  "version": "0.0.0",
-  "main": "lib/index.js",
-  "scripts": {
-    "start": "node lib/index"
-  },
-  "private": true,
-  "dependencies": {
-    "bindings": "^1.5.0",
-    "iohook": "github:Luke265/iohook",
-    "nan": "^2.14.1",
-    "opencv4nodejs": "^5.6.0",
-    "robotjs": "github:Luke265/robotjs"
-  },
-  "devDependencies": {
-    "@types/node": "^14.10.0"
-  },
-  "gypfile": true
+    "name": "robot",
+    "version": "1.0.0",
+    "main": "./dist/index.js",
+    "exports": {
+        "./cv": "./dist/cv/index.js",
+        "./robotjs": "./dist/robotjs/index.js",
+        "./mouse": "./dist/mouse/index.js",
+        "./keyboard": "./dist/keyboard/index.js",
+        ".": "./dist/index.js"
+    },
+    "typesVersions": {
+        "*": {
+            "cv": [
+                "dist/cv/index.d.ts"
+            ],
+            "mouse": [
+                "dist/mouse/index.d.ts"
+            ],
+            "keyboard": [
+                "dist/keyboard/index.d.ts"
+            ],
+            "robotjs": [
+                "dist/robotjs/index.d.ts"
+            ],
+            "*": [
+                "dist/*.d.ts",
+                "dist/index.d.ts"
+            ]
+        }
+    },
+    "scripts": {
+        "install": "node dist/install/install.js"
+    },
+    "files": [
+        "dist",
+        "typings",
+        "src"
+    ],
+    "dependencies": {
+        "node-fetch": "^2.6.5",
+        "tar": "^6.1.11",
+        "tslib": "^2.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^16.10.2",
+        "@types/node-fetch": "^2.5.12",
+        "@types/tar": "^4.0.5"
+    }
 }

@@ -1,7 +1,7 @@
-import { Rect, Mat, THRESH_BINARY } from "opencv4nodejs";
+import { Rect, Mat, THRESH_BINARY, TM_CCOEFF_NORMED, Point2 } from "../cv";
 import { Result } from "./result";
 import { MatchOptions } from "./match-options";
-import { Utils } from "../utils";
+import { isOutOfBounds, scaleRect } from "../cv/utils";
 import { MinMaxLoc } from "./min-max-loc";
 
 export interface MatSource {
@@ -15,32 +15,22 @@ export interface Threshold extends MinMax {
     type: number;
 }
 export class Finder {
+    private _source!: Mat | MatSource;
 
-    private _source: Mat | MatSource;
-
-    region: Rect;
-    lastResult: Result;
-    lastResultRegion: Rect;
-    target: Mat;
-    matchMethod: number;
-    matchLevel: number;
-    alt: MatchOptions[];
+    region?: Rect | null;
+    lastResult: Result | null = null;
+    lastResultRegion: Rect | null = null;
+    target!: Mat;
+    matchMethod: number = TM_CCOEFF_NORMED;
+    matchLevel: number = 0.98;
+    alt?: MatchOptions[];
     remember = false;
-    mask: Mat;
-    treshhold: Threshold = {
-        type: THRESH_BINARY,
-        min: 0.5,
-        max: 1
-    };
-    flood: MinMax = {
-        min: 0.1,
-        max: 1
-    };
+    mask?: Mat;
     startRegion: Rect | null = null;
     autoScale = 1;
 
     get source(): Mat {
-        if (typeof this._source === 'function') {
+        if (typeof this._source === "function") {
             return this._source();
         }
         return this._source;
@@ -50,52 +40,25 @@ export class Finder {
         this._source = source;
     }
 
-    public *findMany() {
-        const originalSource = this.source;
-        let source: Mat = originalSource;
-        if (this.region) {
-            source = source.getRegion(this.region);
-        }
-        let match = source
-            .matchTemplate(this.target, this.matchMethod, this.mask)
-            .threshold(this.treshhold.min, this.treshhold.max, this.treshhold.type);
-        let loc: MinMaxLoc;
-        let maxMatches = 10;
-        while (maxMatches-- > 0) {
-            let minMatches = 1000;
-            while (minMatches-- > 0) {
-                loc = match.minMaxLoc();
-                if (loc.maxVal === 0) {
-                    return;
-                }
-                if (loc.maxVal >= this.matchLevel) {
-                    break;
-                }
-            }
-            // matched.floodFill(loc.maxLoc, 0, new Mat(), options.flood.min, options.flood.max, 4);
-            yield this.toResult(loc, this.region, this.target, null);
-        }
-    }
-
     public find() {
         let originalSource: Mat = this.source;
         let searchSource: Mat = originalSource;
-        let region: Rect = this.region;
+        let region: Rect | undefined | null = this.region;
         if (region) {
-            region = this.fixRegion(new Rect(0, 0, originalSource.cols, originalSource.rows), this.region);
+            region = this.fixRegion(new Rect(0, 0, originalSource.cols, originalSource.rows), region);
             searchSource = originalSource.getRegion(region);
             this.lastResult = null; // temporary
         }
         let source: Mat = searchSource;
         let match: Mat;
-        let result: any;
+        let result: MinMaxLoc | null = null;
         let searchRegion = region;
         // check if the target is in the last position
         if (this.startRegion && !this.lastResultRegion) {
             this.lastResultRegion = this.startRegion;
         }
         if (this.lastResultRegion) {
-            if (!Utils.isOutOfBounds(searchSource, this.lastResultRegion)) {
+            if (!isOutOfBounds(searchSource, this.lastResultRegion)) {
                 searchRegion = this.lastResultRegion;
                 source = searchSource.getRegion(this.lastResultRegion);
             }
@@ -109,21 +72,24 @@ export class Finder {
                 }
                 result = match.minMaxLoc();
                 if (result.maxVal >= this.matchLevel) {
-                    return this.toResult(result, searchRegion, this.target, result);
+                    return this.toResult(result, searchRegion, this.target);
                 }
             } else if (i === 0) {
-                throw new Error(`Source (${source.cols}x${source.rows}) is smaller than target (${this.target.cols}x${this.target.rows})`)
+                throw new Error(
+                    `Source (${source.cols}x${source.rows}) is smaller than target (${this.target.cols}x${this.target.rows})`
+                );
             }
             if (this.alt) {
                 for (let alt of this.alt) {
-                    if (alt.target.cols > source.cols || alt.target.rows > source.rows) {
+                    const target = alt.target;
+                    if (!target || target.cols > source.cols || target.rows > source.rows) {
                         continue;
                     }
                     const matchLevel = alt.matchLevel || this.matchLevel;
-                    match = source.matchTemplate(alt.target, alt.matchMethod || this.matchMethod);
+                    match = source.matchTemplate(target, alt.matchMethod || this.matchMethod);
                     result = match.minMaxLoc();
                     if (result.maxVal >= matchLevel) {
-                        return this.toResult(result, searchRegion, alt.target, alt);
+                        return this.toResult(result, searchRegion, target, alt);
                     }
                 }
             }
@@ -132,19 +98,26 @@ export class Finder {
             if (!this.lastResultRegion) {
                 break;
             }
-            searchRegion = Utils.scaleRect(searchRegion);
-            if (Utils.isOutOfBounds(searchSource, searchRegion)) {
-                source = searchSource;
-                searchRegion = region;
-                this.lastResultRegion = this.lastResult = null;
-            } else {
-                source = searchSource.getRegion(searchRegion);
+            if (searchRegion && i + 1 < this.autoScale) {
+                searchRegion = scaleRect(searchRegion);
+                if (isOutOfBounds(searchSource, searchRegion)) {
+                    source = searchSource;
+                    searchRegion = region;
+                    this.lastResultRegion = this.lastResult = null;
+                } else {
+                    source = searchSource.getRegion(searchRegion);
+                }
             }
         }
         this.reset();
     }
 
-    private toResult(match: MinMaxLoc, offset: Rect | null | undefined, target: Mat, matchOptions: MatchOptions): Result {
+    private toResult(
+        match: MinMaxLoc,
+        offset: Rect | null | undefined,
+        target: Mat,
+        matchOptions?: MatchOptions | null
+    ): Result {
         const result = new Result(
             match.maxLoc.x + (offset ? offset.x : 0),
             match.maxLoc.y + (offset ? offset.y : 0),
@@ -158,11 +131,14 @@ export class Finder {
                 let minWidth = this.target.cols;
                 let minHeight = this.target.rows;
                 for (let alt of this.alt) {
-                    if (minWidth < alt.target.cols) {
-                        minWidth = alt.target.cols;
-                    }
-                    if (minHeight < alt.target.rows) {
-                        minHeight = alt.target.rows;
+                    const target = alt.target;
+                    if (target) {
+                        if (minWidth < target.cols) {
+                            minWidth = target.cols;
+                        }
+                        if (minHeight < target.rows) {
+                            minHeight = target.rows;
+                        }
                     }
                 }
                 this.lastResultRegion = new Rect(match.maxLoc.x, match.maxLoc.y, minWidth, minHeight);
@@ -195,5 +171,4 @@ export class Finder {
         this.lastResult = null;
         this.lastResultRegion = null;
     }
-
 }
