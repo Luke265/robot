@@ -2,7 +2,7 @@ import { Event, EventType, IOHook } from "../keyboard/iohook";
 
 let iohook: IOHook | null = null;
 
-export { getClip, setClip, Tesseract } from "./bindings";
+export { getClip, setClip } from "./bindings";
 export * from "./screen";
 export { Event, EventType } from "../keyboard/iohook";
 

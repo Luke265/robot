@@ -5,6 +5,7 @@
     "exports": {
         "./cv": "./dist/cv/index.js",
         "./robotjs": "./dist/robotjs/index.js",
+        "./tesseract": "./dist/tesseract/index.js",
         "./mouse": "./dist/mouse/index.js",
         "./keyboard": "./dist/keyboard/index.js",
         ".": "./dist/index.js"
@@ -22,6 +23,9 @@
             ],
             "robotjs": [
                 "dist/robotjs/index.d.ts"
+            ],
+            "tesseract": [
+                "dist/tesseract/index.d.ts"
             ],
             "*": [
                 "dist/*.d.ts",

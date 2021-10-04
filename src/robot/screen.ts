@@ -14,5 +14,6 @@ export function capture(screen: number = 0, target?: Mat) {
         const [width, height] = getDesktopResolution();
         mat = new Mat(Math.ceil(height / 8) * 8, Math.ceil(width / 8) * 8, CV_8UC3);
     }
-    return instance.grab(target! || mat!, screen);
+    instance.grab(target! || mat!, screen);
+    return target! || mat!;
 }
