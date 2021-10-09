@@ -11,5 +11,5 @@ export declare function mouseClick(button?: string, double?: boolean) : void
 export declare function mouseToggle(down?: string, button?: string) : void
 export declare function dragMouse(x: number, y: number) : void
 export declare function scrollMouse(x: number, y: number) : void
-export declare function getMousePos(): { x: number, y: number }
+export declare function getMousePos(): { readonly x: number, readonly y: number }
 export declare function getScreenSize(): { width: number, height: number }

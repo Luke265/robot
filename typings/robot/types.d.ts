@@ -1,7 +1,7 @@
-import { Mat } from "../opencv4nodejs/types";
+import { Mat, Rect } from "../opencv4nodejs/types";
 
 export class Capture {
-    grab(mat: Mat, screen: number);
+    grab(mat: Mat, screen: number): void;
 }
 
 export enum PageSegMode {
@@ -30,9 +30,10 @@ export class Tesseract {
     getBoxes(): { word: string, confidence: number, box: Rect }[];
     setPageSegMode(mode: PageSegMode): void;
     setSourceResolution(resolution: number): void;
-    clear();
+    clear(): void;
 }
 
 export function getClip(): string;
 export function setClip(content: string): void;
+export function find(source: Mat, target: Mat, maxDiff?: number, maxResults?: number): [number, number][];
 export function getDesktopResolution(): [number, number];
