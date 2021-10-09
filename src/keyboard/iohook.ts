@@ -13,7 +13,7 @@ const EVENTS = {
     11: "mousewheel",
 };
 
-export type EventType =
+export type IOEventType =
     | "keydown"
     | "keyup"
     | "mouseclick"
@@ -23,8 +23,8 @@ export type EventType =
     | "mousedrag"
     | "mousewheel";
 
-export interface Event {
-    type: EventType;
+export interface IOEvent {
+    type: IOEventType;
     shiftKey?: boolean;
     altKey?: boolean;
     ctrlKey?: boolean;
