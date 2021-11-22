@@ -5,7 +5,7 @@ import { millis, random } from "../utils/index";
 import { getMousePos, mouseToggle } from "../robotjs";
 
 let worker: Worker | null = null;
-
+let commandId = 0;
 export type MouseButton = "left" | "right" | "middle";
 export type MouseAction = "click" | "press" | "release";
 
@@ -39,20 +39,33 @@ export function pos() {
     return getMousePos();
 }
 
-export function move(x: number, y: number, options?: Partial<Options>) {
+export function move(x: number, y: number, options?: Partial<Options & { async?: number }>) {
     return workerCommand("move", x, y, options);
 }
 
 function workerCommand(command: string, ...args: any[]): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        await worker?.terminate();
-        worker = new Worker(Path.join(__dirname, "worker.js"), {
-            workerData: {
-                command,
-                args,
-            },
-        });
+        if (!worker) {
+            worker = new Worker(Path.join(__dirname, "worker.js"));
+            worker.once("error", () => worker = null);
+            worker.once("exit", () => worker = null);
+        }
+        const id = commandId++;
+        const listener = (data: any) => {
+            if (data.id === id && worker) {
+                worker.off("message", listener);
+                worker.off("error", reject);
+                worker.off("exit", resolve);
+                resolve();
+            }
+        };
         worker.once("error", reject);
         worker.once("exit", resolve);
+        worker.on("message", listener);
+        worker.postMessage({
+            id,
+            command,
+            args,
+        });
     });
 }
