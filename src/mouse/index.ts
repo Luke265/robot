@@ -47,8 +47,8 @@ function workerCommand(command: string, ...args: any[]): Promise<void> {
     return new Promise(async (resolve, reject) => {
         if (!worker) {
             worker = new Worker(Path.join(__dirname, "worker.js"));
-            worker.once("error", () => worker = null);
-            worker.once("exit", () => worker = null);
+            worker.once("error", () => (worker = null));
+            worker.once("exit", () => (worker = null));
         }
         const id = commandId++;
         const listener = (data: any) => {
@@ -56,7 +56,11 @@ function workerCommand(command: string, ...args: any[]): Promise<void> {
                 worker.off("message", listener);
                 worker.off("error", reject);
                 worker.off("exit", resolve);
-                resolve();
+                if (data.error) {
+                    reject(data.error);
+                } else {
+                    resolve();
+                }
             }
         };
         worker.once("error", reject);

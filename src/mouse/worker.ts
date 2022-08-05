@@ -4,23 +4,27 @@ import { parentPort } from "worker_threads";
 let lastCommandAt = new Date();
 
 parentPort!.on("message", ({ id, command, args }) => {
-    if (command === "move") {
-        const [x, y, options] = args;
-        const mover = new Mover(x, y, options);
-        const repeat = () => {
-            if (mover.step()) {
-                if (options?.async) {
-                    setTimeout(repeat, options.async);
+    try {
+        if (command === "move") {
+            const [x, y, options] = args;
+            const mover = new Mover(x, y, options);
+            const repeat = () => {
+                if (mover.step()) {
+                    if (options?.async) {
+                        setTimeout(repeat, options.async);
+                    } else {
+                        repeat();
+                    }
                 } else {
-                    repeat();
+                    parentPort?.postMessage({ id });
                 }
-            } else {
-                parentPort?.postMessage({ id });
-            }
-        };
-        repeat();
+            };
+            repeat();
+        }
+        lastCommandAt = new Date();
+    } catch (e) {
+        parentPort?.postMessage({ id, error: e });
     }
-    lastCommandAt = new Date();
 });
 
 const idleJob = setInterval(() => {
