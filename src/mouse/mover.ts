@@ -6,6 +6,7 @@ const sqrt5 = Math.sqrt(5);
 
 export interface Options {
     wind: number;
+    async: number;
     gravity: number;
     maxStep: number;
     interruptThreshold: number;
@@ -23,6 +24,7 @@ export class Mover {
     constructor(private dstX: number, private dstY: number, options?: Partial<Options>) {
         this.options = {
             wind: 10,
+            async: 1,
             gravity: 15,
             maxStep: 20,
             interruptThreshold: 10,

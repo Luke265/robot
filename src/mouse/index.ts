@@ -43,6 +43,10 @@ export function move(x: number, y: number, options?: Partial<Options & { async?:
     return workerCommand("move", x, y, options);
 }
 
+export function stop() {
+    return workerCommand("stop");
+}
+
 function workerCommand(command: string, ...args: any[]): Promise<void> {
     return new Promise(async (resolve, reject) => {
         if (!worker) {
