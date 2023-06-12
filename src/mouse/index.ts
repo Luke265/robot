@@ -1,11 +1,9 @@
 import type { Options } from "./mover";
-import * as Path from "path";
-import { Worker } from "worker_threads";
 import { millis, random } from "../utils/index";
 import { getMousePos, mouseToggle } from "../robotjs";
+import { mouseMoveHuman } from "../robot/bindings";
 
-let worker: Worker | null = null;
-let commandId = 0;
+let moveStopHandle: (() => void) | null = null;
 export type MouseButton = "left" | "right" | "middle";
 export type MouseAction = "click" | "press" | "release";
 
@@ -39,41 +37,20 @@ export function pos() {
     return getMousePos();
 }
 
-export function move(x: number, y: number, options?: Partial<Options & { async?: number }>) {
-    return workerCommand("move", x, y, options);
+export function move(x: number, y: number, options?: Partial<Options>): Promise<void> {
+    return new Promise((resolve) => {
+        moveStopHandle = mouseMoveHuman(
+            x,
+            y,
+            { delay: 1000, gravity: 100, wind: 120, maxStep: 20, interruptThreshold: 10, ...options },
+            resolve
+        );
+    });
 }
 
 export function stop() {
-    return workerCommand("stop");
-}
-
-function workerCommand(command: string, ...args: any[]): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-        if (!worker) {
-            worker = new Worker(Path.join(__dirname, "worker.js"));
-            worker.once("error", () => (worker = null));
-            worker.once("exit", () => (worker = null));
-        }
-        const id = commandId++;
-        const listener = (data: any) => {
-            if (data.id === id && worker) {
-                worker.off("message", listener);
-                worker.off("error", reject);
-                worker.off("exit", resolve);
-                if (data.error) {
-                    reject(data.error);
-                } else {
-                    resolve();
-                }
-            }
-        };
-        worker.once("error", reject);
-        worker.once("exit", resolve);
-        worker.on("message", listener);
-        worker.postMessage({
-            id,
-            command,
-            args,
-        });
-    });
+    if (moveStopHandle) {
+        moveStopHandle();
+    }
+    moveStopHandle = null;
 }

@@ -27,7 +27,7 @@ export class Tesseract {
     setImage(image: Mat): void;
     recognize(): void;
     getText(): string;
-    getBoxes(): { word: string, confidence: number, box: Rect }[];
+    getBoxes(): { word: string; confidence: number; box: Rect }[];
     setPageSegMode(mode: PageSegMode): void;
     setSourceResolution(resolution: number): void;
     clear(): void;
@@ -37,3 +37,11 @@ export function getClip(): string;
 export function setClip(content: string): void;
 export function find(source: Mat, target: Mat, maxDiff?: number, maxResults?: number): [number, number][];
 export function getDesktopResolution(): [number, number];
+export function mouseMoveHuman(x: number, y: number): () => void;
+export function mouseMoveHuman(x: number, y: number, cb: () => void): () => void;
+export function mouseMoveHuman(
+    x: number,
+    y: number,
+    options: { delay?: number; gravity?: number; maxStep?: number; wind?: number; interruptThreshold?: number },
+    cb: () => void
+): () => void;
