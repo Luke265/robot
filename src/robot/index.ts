@@ -7,6 +7,8 @@ let iohook: IOHook | null = null;
 let mat!: Mat;
 let instance: Capture | null = null;
 const captureEmitter = new EventEmitter();
+const beforeExit = () => iohook?.unload();
+process.on("beforeExit", beforeExit);
 
 export function on(evt: IOEventType, cb: (evt: IOEvent) => void): void;
 export function on(evt: "capture", cb: (mat: Mat, screen: number) => void): void;
@@ -38,7 +40,11 @@ export function off(evt: any, cb: any) {
         iohook = null;
     }
 }
-
+export function removeAllListeners() {
+    iohook?.removeAllListeners();
+    iohook?.unload();
+    iohook = null;
+}
 export function lastCapture() {
     return mat;
 }
