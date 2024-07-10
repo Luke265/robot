@@ -1,6 +1,6 @@
-import { Mat } from './Mat';
-import { Rect } from './Rect';
-import { TrackerKCFParams } from './TrackerKCFParams';
+import { Mat } from './Mat.d';
+import { Rect } from './Rect.d';
+import { TrackerKCFParams } from './TrackerKCFParams.d';
 
 export class TrackerKCF {
   constructor();
@@ -8,4 +8,10 @@ export class TrackerKCF {
   clear(): void;
   init(frame: Mat, boundingBox: Rect): boolean;
   update(frame: Mat): Rect;
+}
+
+export class trackerKCFModes{
+  static GRAY: number;
+	static CN: number;
+	static CUSTOM: number;
 }

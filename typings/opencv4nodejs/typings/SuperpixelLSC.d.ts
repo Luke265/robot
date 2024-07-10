@@ -1,4 +1,4 @@
-import { Mat } from './Mat';
+import { Mat } from './Mat.d';
 
 export class SuperpixelLSC {
   readonly image: Mat;

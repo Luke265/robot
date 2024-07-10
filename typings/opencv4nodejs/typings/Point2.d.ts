@@ -1,4 +1,4 @@
-import { Point } from './Point';
+import { Point } from './Point.d';
 
 export class Point2 extends Point {
   readonly x: number;

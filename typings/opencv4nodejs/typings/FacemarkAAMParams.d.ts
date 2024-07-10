@@ -1,3 +1,21 @@
+import { Facemark } from "./Facemark";
+import { Point2 } from "./Point2";
+
+export class FacemarkAAM extends Facemark { }
+
+export interface FacemarkAAMParamsI {
+  m: number;
+  maxM: number;
+  maxN: number;
+  modelFilename: string;
+  n: number;
+  nIter: number;
+  saveModel: boolean;
+  scales: number[];
+  textureMaxM: number;
+  verbose: boolean;
+}
+
 export class FacemarkAAMParams {
   readonly m: number;
   readonly maxM: number;
@@ -9,5 +27,9 @@ export class FacemarkAAMParams {
   readonly scales: number[];
   readonly textureMaxM: number;
   readonly verbose: boolean;
-  constructor();
+  constructor(param?: Partial<FacemarkAAMParamsI>);
+}
+
+export class FacemarkAAMData {
+  s0: Point2[]; // was string 
 }

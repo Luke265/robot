@@ -1,4 +1,4 @@
-import { Vec } from './Vec';
+import { Vec } from './Vec.d';
 
 export class Vec6 extends Vec {
   readonly u: number;

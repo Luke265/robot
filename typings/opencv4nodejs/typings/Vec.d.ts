@@ -1,10 +1,8 @@
-import { Vec3 } from './Vec3';
-
 export class Vec {
   absdiff(otherVec: Vec): Vec;
   add(otherVec: Vec): Vec;
   at(index: number): number;
-  cross(): Vec3;
+  cross(v?: Vec): Vec;
   div(s: number): Vec;
   exp(): Vec;
   hDiv(otherVec: Vec): Vec;

@@ -1,5 +1,5 @@
-import { Mat } from './Mat';
-import { Rect } from './Rect';
+import { Mat } from './Mat.d';
+import { Rect } from './Rect.d';
 
 export class TrackerMedianFlow {
   constructor(pointsInGrid?: number);

@@ -1,6 +1,6 @@
-import { Mat } from './Mat';
-import { Rect } from './Rect';
-import { TrackerMILParams } from './TrackerMILParams';
+import { Mat } from './Mat.d';
+import { Rect } from './Rect.d';
+import { TrackerMILParams } from './TrackerMILParams.d';
 
 export class TrackerMIL {
   constructor();

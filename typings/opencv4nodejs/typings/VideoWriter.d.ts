@@ -1,5 +1,5 @@
-import { Mat } from './Mat';
-import { Size } from './Size';
+import { Mat } from './Mat.d';
+import { Size } from './Size.d';
 
 export class VideoWriter {
   constructor(filePath: string, fourccCode: number, fps: number, frameSize: Size, isColor?: boolean);
@@ -9,4 +9,5 @@ export class VideoWriter {
   set(property: number, value: number): void;
   write(img: Mat): void;
   writeAsync(img: Mat): Promise<void>;
+  writeAsync(img: Mat, callback: () => void): void;
 }

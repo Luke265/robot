@@ -1,6 +1,6 @@
-import { Mat } from './Mat';
-import { Rect } from './Rect';
-import { TrackerBoostingParams } from './TrackerBoostingParams';
+import { Mat } from './Mat.d';
+import { Rect } from './Rect.d';
+import { TrackerBoostingParams } from './TrackerBoostingParams.d';
 
 export class TrackerBoosting {
   constructor();

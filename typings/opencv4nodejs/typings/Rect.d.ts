@@ -1,5 +1,4 @@
-import { Size } from './Size';
-
+import { Size } from './Size.d';
 export class Rect {
   readonly x: number;
   readonly y: number;

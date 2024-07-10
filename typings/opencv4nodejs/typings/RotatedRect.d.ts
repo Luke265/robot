@@ -1,6 +1,6 @@
-import { Size } from './Size';
-import { Rect } from './Rect';
-import { Point2 } from './Point2';
+import { Size } from './Size.d';
+import { Rect } from './Rect.d';
+import { Point2 } from './Point2.d';
 
 export class RotatedRect {
   readonly center: Point2;

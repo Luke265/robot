@@ -1,4 +1,4 @@
-import { Point2 } from './Point2';
+import { Point2 } from './Point2.d';
 
 export class KeyPoint {
   readonly pt: Point2;

@@ -1,6 +1,6 @@
-import { Mat } from './Mat';
-import { Rect } from './Rect';
-import { TrackerCSRTParams } from './TrackerCSRTParams';
+import { Mat } from './Mat.d';
+import { Rect } from './Rect.d';
+import { TrackerCSRTParams } from './TrackerCSRTParams.d';
 
 export class TrackerCSRT {
   constructor();

@@ -1,8 +1,8 @@
-import { Rect } from './Rect';
-import { RotatedRect } from './RotatedRect';
-import { Moments } from './Moments';
-import { Point2 } from './Point2';
-import { Vec4 } from './Vec4';
+import { Rect } from './Rect.d';
+import { RotatedRect } from './RotatedRect.d';
+import { Moments } from './Moments.d';
+import { Point2 } from './Point2.d';
+import { Vec4 } from './Vec4.d';
 
 export class Contour {
   readonly numPoints: number;

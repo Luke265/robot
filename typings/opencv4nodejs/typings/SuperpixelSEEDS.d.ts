@@ -1,4 +1,4 @@
-import { Mat } from './Mat';
+import { Mat } from './Mat.d';
 
 export class SuperpixelSEEDS {
   readonly image: Mat;
